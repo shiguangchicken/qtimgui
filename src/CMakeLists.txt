@@ -4,10 +4,10 @@ project(qtimgui)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-find_package(Qt5 COMPONENTS Core Quick Gui Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Quick Gui Widgets OpenGLWidgets REQUIRED)
 
-set(
-    qt_imgui_sources
+set(qt_imgui_sources
+    
     ImGuiRenderer.h
     ImGuiRenderer.cpp
     QtImGui.h
@@ -21,7 +21,8 @@ target_link_libraries(
     qt_imgui_quick
     PUBLIC
     imgui
-    Qt5::Gui
+    Qt6::Gui
+    Qt6::OpenGLWidgets
     )
 if (ANDROID)
     target_link_libraries(qt_imgui_quick PUBLIC log dl GLESv2 z)
@@ -34,7 +35,7 @@ target_link_libraries(
     qt_imgui_widgets
     PUBLIC
     imgui
-    Qt5::Widgets
+    Qt6::Widgets
     )
 if (ANDROID)
     target_link_libraries(qt_imgui_widgets PUBLIC log dl GLESv2 z)
