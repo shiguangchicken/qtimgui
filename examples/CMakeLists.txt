@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 3.8.1)
-
 # Demo with Qt quick
 add_subdirectory(window)
 

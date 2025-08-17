@@ -17,7 +17,7 @@ protected:
     void paintGL() override
     {
         QtImGui::newFrame();
-
+        
         // 1. Show a simple window
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
         {
@@ -47,7 +47,7 @@ protected:
         }
 
         // Do render before ImGui UI is rendered
-        glViewport(0, 0, width(), height());
+        glViewport(0, 0, devicePixelRatio() * width(), devicePixelRatio() * height());
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 

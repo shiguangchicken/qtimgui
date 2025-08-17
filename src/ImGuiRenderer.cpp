@@ -22,34 +22,33 @@ namespace QtImGui {
 namespace {
 
 // Keyboard mapping. Dear ImGui use those indices to peek into the io.KeysDown[] array.
-const QHash<int, ImGuiKey> keyMap = {
-    { Qt::Key_Tab, ImGuiKey_Tab },
-    { Qt::Key_Left, ImGuiKey_LeftArrow },
-    { Qt::Key_Right, ImGuiKey_RightArrow },
-    { Qt::Key_Up, ImGuiKey_UpArrow },
-    { Qt::Key_Down, ImGuiKey_DownArrow },
-    { Qt::Key_PageUp, ImGuiKey_PageUp },
-    { Qt::Key_PageDown, ImGuiKey_PageDown },
-    { Qt::Key_Home, ImGuiKey_Home },
-    { Qt::Key_End, ImGuiKey_End },
-    { Qt::Key_Insert, ImGuiKey_Insert },
-    { Qt::Key_Delete, ImGuiKey_Delete },
-    { Qt::Key_Backspace, ImGuiKey_Backspace },
-    { Qt::Key_Space, ImGuiKey_Space },
-    { Qt::Key_Enter, ImGuiKey_Enter },
-    { Qt::Key_Return, ImGuiKey_Enter },
-    { Qt::Key_Escape, ImGuiKey_Escape },
-    { Qt::Key_A, ImGuiKey_A },
-    { Qt::Key_C, ImGuiKey_C },
-    { Qt::Key_V, ImGuiKey_V },
-    { Qt::Key_X, ImGuiKey_X },
-    { Qt::Key_Y, ImGuiKey_Y },
-    { Qt::Key_Z, ImGuiKey_Z },
-    { Qt::MiddleButton, ImGuiMouseButton_Middle }
+const QHash<int, ImGuiKey> KEY_MAP = {
+    { Qt::Key_Tab, ImGuiKey::ImGuiKey_Tab },
+    { Qt::Key_Left, ImGuiKey::ImGuiKey_LeftArrow },
+    { Qt::Key_Right, ImGuiKey::ImGuiKey_RightArrow },
+    { Qt::Key_Up, ImGuiKey::ImGuiKey_UpArrow },
+    { Qt::Key_Down, ImGuiKey::ImGuiKey_DownArrow },
+    { Qt::Key_PageUp, ImGuiKey::ImGuiKey_PageUp },
+    { Qt::Key_PageDown, ImGuiKey::ImGuiKey_PageDown },
+    { Qt::Key_Home, ImGuiKey::ImGuiKey_Home },
+    { Qt::Key_End, ImGuiKey::ImGuiKey_End },
+    { Qt::Key_Insert, ImGuiKey::ImGuiKey_Insert },
+    { Qt::Key_Delete, ImGuiKey::ImGuiKey_Delete },
+    { Qt::Key_Backspace, ImGuiKey::ImGuiKey_Backspace },
+    { Qt::Key_Space, ImGuiKey::ImGuiKey_Space },
+    { Qt::Key_Enter, ImGuiKey::ImGuiKey_Enter },
+    { Qt::Key_Return, ImGuiKey::ImGuiKey_Enter },
+    { Qt::Key_Escape, ImGuiKey::ImGuiKey_Escape },
+    { Qt::Key_A, ImGuiKey::ImGuiKey_A },
+    { Qt::Key_C, ImGuiKey::ImGuiKey_C },
+    { Qt::Key_V, ImGuiKey::ImGuiKey_V },
+    { Qt::Key_X, ImGuiKey::ImGuiKey_X },
+    { Qt::Key_Y, ImGuiKey::ImGuiKey_Y },
+    { Qt::Key_Z, ImGuiKey::ImGuiKey_Z }
 };
 
 #ifndef QT_NO_CURSOR
-const QHash<ImGuiMouseCursor, Qt::CursorShape> cursorMap = {
+const QHash<ImGuiMouseCursor, Qt::CursorShape> CURSOR_MAP = {
     { ImGuiMouseCursor_Arrow,      Qt::CursorShape::ArrowCursor },
     { ImGuiMouseCursor_TextInput,  Qt::CursorShape::IBeamCursor },
     { ImGuiMouseCursor_ResizeAll,  Qt::CursorShape::SizeAllCursor },
@@ -81,11 +80,6 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     #endif
     io.BackendPlatformName = "qtimgui";
     
-    // Setup keyboard mapping
-    for (ImGuiKey key : keyMap.values()) {
-        io.KeyMap[key] = key;
-    }
-    
     // io.RenderDrawListsFn = [](ImDrawData *drawData) {
     //    instance()->renderDrawList(drawData);
     // };
@@ -111,6 +105,9 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
     const ImGuiIO& io = ImGui::GetIO();
     int fb_width = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
     int fb_height = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
+    float sx = io.DisplayFramebufferScale.x;
+    float sy = io.DisplayFramebufferScale.y;
+
     if (fb_width == 0 || fb_height == 0)
         return;
     draw_data->ScaleClipRects(io.DisplayFramebufferScale);
@@ -175,6 +172,7 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
 
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
+
             const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
             if (pcmd->UserCallback)
             {
@@ -189,10 +187,10 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
                     continue;
 
                 // Apply scissor/clipping rectangle (Y is inverted in OpenGL)
-                glScissor((int)clip_min.x, (int)(fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
+                glScissor((int)(clip_min.x / sx), (int)(fb_height - clip_max.y / sy) , (int)((clip_max.x - clip_min.x) / sx) , (int)((clip_max.y - clip_min.y) / sy));
 
                  // Bind texture, Draw
-                glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->TextureId);
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->GetTexID());
                 glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset + pcmd->IdxOffset);
             }
         }
@@ -442,10 +440,10 @@ void ImGuiRenderer::onKeyPressRelease(QKeyEvent *event)
     const bool key_pressed = (event->type() == QEvent::KeyPress);
     
     // Translate `Qt::Key` into `ImGuiKey`, and apply 'pressed' state for that key
-    const auto key_it = keyMap.constFind( event->key() );
-    if (key_it != keyMap.constEnd()) { // Qt's key found in keyMap
-        const int imgui_key = *(key_it);
-        io.KeysDown[imgui_key] = key_pressed;
+    const auto key_it = KEY_MAP.constFind( event->key() );
+    if (key_it != KEY_MAP.constEnd()) { // Qt's key found in KEY_MAP
+        const ImGuiKey imgui_key = *(key_it);
+        io.AddKeyEvent(imgui_key, key_pressed);
     }
 
     if (key_pressed) {
@@ -489,8 +487,8 @@ void ImGuiRenderer::updateCursorShape(const ImGuiIO& io)
         // Show OS mouse cursor
         
         // Translate `ImGuiMouseCursor` into `Qt::CursorShape` and show it, if we can
-        const auto cursor_it = cursorMap.constFind( imgui_cursor );
-        if(cursor_it != cursorMap.constEnd()) // `Qt::CursorShape` found for `ImGuiMouseCursor`
+        const auto cursor_it = CURSOR_MAP.constFind( imgui_cursor );
+        if(cursor_it != CURSOR_MAP.constEnd()) // `Qt::CursorShape` found for `ImGuiMouseCursor`
         {
             const Qt::CursorShape qt_cursor_shape = *(cursor_it);
             m_window->setCursorShape(qt_cursor_shape);

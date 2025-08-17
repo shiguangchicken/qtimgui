@@ -48,7 +48,7 @@ protected:
         }
 
         // Do render before ImGui UI is rendered
-        glViewport(0, 0, width(), height());
+        glViewport(0, 0, devicePixelRatio()* width(), devicePixelRatio() * height());
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
