@@ -22,7 +22,7 @@ namespace QtImGui {
 namespace {
 
 // Keyboard mapping. Dear ImGui use those indices to peek into the io.KeysDown[] array.
-const QHash<int, ImGuiKey> keyMap = {
+const QHash<int, int> keyMap = {
     { Qt::Key_Tab, ImGuiKey_Tab },
     { Qt::Key_Left, ImGuiKey_LeftArrow },
     { Qt::Key_Right, ImGuiKey_RightArrow },
@@ -82,9 +82,9 @@ void ImGuiRenderer::initialize(WindowWrapper *window) {
     io.BackendPlatformName = "qtimgui";
     
     // Setup keyboard mapping
-    for (ImGuiKey key : keyMap.values()) {
-        io.KeyMap[key] = key;
-    }
+    // for (ImGuiKey key : keyMap.values()) {
+    //     io.KeyMap[key] = key;
+    // }
     
     // io.RenderDrawListsFn = [](ImDrawData *drawData) {
     //    instance()->renderDrawList(drawData);
@@ -192,7 +192,7 @@ void ImGuiRenderer::renderDrawList(ImDrawData *draw_data)
                 glScissor((int)clip_min.x, (int)(fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
                  // Bind texture, Draw
-                glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->TextureId);
+                glBindTexture(GL_TEXTURE_2D, (GLuint)(size_t)pcmd->GetTexID());
                 glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset + pcmd->IdxOffset);
             }
         }
@@ -445,7 +445,8 @@ void ImGuiRenderer::onKeyPressRelease(QKeyEvent *event)
     const auto key_it = keyMap.constFind( event->key() );
     if (key_it != keyMap.constEnd()) { // Qt's key found in keyMap
         const int imgui_key = *(key_it);
-        io.KeysDown[imgui_key] = key_pressed;
+        // io.KeysDown[imgui_key] = key_pressed;
+        io.AddKeyEvent((ImGuiKey) imgui_key, true);
     }
 
     if (key_pressed) {

@@ -9,11 +9,17 @@
 
 class DemoWindow : public QOpenGLWidget, private QOpenGLExtraFunctions
 {
+public:
+    virtual ~DemoWindow()
+    {
+        ImPlot::DestroyContext();
+    }
 protected:
     void initializeGL() override
     {
         initializeOpenGLFunctions();
         QtImGui::initialize(this);
+        ImPlot::CreateContext();
     }
     void paintGL() override
     {
@@ -42,9 +48,9 @@ protected:
         if (show_implot_demo_window)
         {
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-            ImPlot::CreateContext();
+
             ImPlot::ShowDemoWindow(&show_implot_demo_window);
-            ImPlot::DestroyContext();
+
         }
 
         // Do render before ImGui UI is rendered
